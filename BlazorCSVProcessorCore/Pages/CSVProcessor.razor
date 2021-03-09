@@ -1,0 +1,142 @@
+﻿@page "/csvprocessor"
+@using System.IO
+@using Microsoft.AspNetCore.Components.Forms
+@using BlazorCSVProcessorCore.Pages.Helpers
+
+<div>
+    <!--display the list side by side-->
+    <div class="container">
+
+        @{
+            if (FileList.Count != 0)
+            {
+                <div>
+                    <input type="checkbox" id="editChk" title="Add Header" @onchange="eventargs => { ShowHeader(eventargs.Value); }" />
+                    <div id="mycontent">
+                        <button id="addInputBtn" click="AddInputBox">Add Input Box</button>
+                    </div>
+                </div>
+                <div hidden="@isHidden" id="headerholder" @ref="HeaderHolder">
+                    @{
+                        for (int i = 0; i < NewCols.Count; i++)
+                        {
+                            var val = i;
+                            <input type="text" placeholder="column" @bind="NewCols[val]" @bind:event="onchange" />
+                        }
+                    }
+                    <button @onclick="AppendCol">Add Column</button>
+                    <button @onclick="CancelAppend">Cancel</button>
+                    <button @onclick="ConfirmAppend">Confirm</button>
+                </div>
+            }
+        }
+
+        <div>@exceptionMessage</div>
+        @{
+            if (isLoading)
+            {
+                <p>Loading...</p>
+            }
+        }
+        <div class="row">
+            @foreach (var item in FileList)
+            {
+                <div class="row w-100">
+                    @{
+                        var cols = item.Split(',');
+                        foreach (var col in cols)
+                        {
+                            <div class="col border">
+                                <p>@col</p>
+                            </div>
+                        }
+                        <div class="col">
+                            <p>@item</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <form>
+            <label>
+                Upload File
+                <InputFile OnChange="@LoadFile">
+                    some text
+                </InputFile>
+            </label>
+            <button type="submit">Upload Selected File(s)</button>
+        </form>
+    </div>
+
+</div>
+@code {
+    private bool isLoading;
+    private bool isHidden = false;
+    private List<string> FileList = new List<string>();
+    private IBrowserFile browserFile;
+    string exceptionMessage;
+    ElementReference HeaderHolder;
+
+    private List<string> NewCols = new List<string>();
+    async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        isLoading = true;
+        try
+        {
+
+            await CSVProcessHelper.ReaderHelper(e.File.OpenReadStream(), FileList);
+
+        }
+        catch (Exception ex)
+        {
+            exceptionMessage = ex.Message;
+        }
+        isLoading = false;
+
+    }
+
+    void ShowHeader(object eventObj)
+    {
+        try
+        {
+            if ((bool)eventObj)
+            {
+                isHidden = true;
+            }
+            else isHidden = false;
+        }
+        catch (Exception ex)
+        {
+            exceptionMessage = ex.Message;
+        }
+    }
+
+
+    void AppendCol(MouseEventArgs e)
+    {
+        if (NewCols != null)
+        {
+
+            NewCols.Add(string.Empty);
+        }
+
+    }
+
+    void CancelAppend(MouseEventArgs e)
+    {
+        NewCols.Clear();
+    }
+
+    void ConfirmAppend()
+    {
+        var bufferStr = string.Empty;
+        foreach (var item in NewCols)
+        {
+            Console.WriteLine(item);
+            bufferStr += (item + ",");
+        }
+
+        FileList.Insert(0, bufferStr);
+        NewCols.Clear();
+    }
+}
