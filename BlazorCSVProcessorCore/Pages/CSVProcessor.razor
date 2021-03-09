@@ -20,6 +20,7 @@
                     @{
                         for (int i = 0; i < NewCols.Count; i++)
                         {
+                            //add a buffer val, other wise, the i value will always be Count at last iteration
                             var val = i;
                             <input type="text" placeholder="column" @bind="NewCols[val]" @bind:event="onchange" />
                         }
@@ -39,11 +40,13 @@
             }
         }
         <div class="row">
-            @foreach (var item in FileList)
+            @for (int i=0;i<FileList.Count;i++)
             {
+                //local index buffer;
+                var val = i;
                 <div class="row w-100">
                     @{
-                        var cols = item.Split(',');
+                        var cols = FileList[i].Split(',');
                         foreach (var col in cols)
                         {
                             <div class="col border">
@@ -51,7 +54,7 @@
                             </div>
                         }
                         <div class="col">
-                            <p>@item</p>
+                            <input @bind="FileList[val]" disabled="@IsDisabled"/>
                         </div>
                     }
                 </div>
@@ -70,8 +73,12 @@
 
 </div>
 @code {
+    //loading file
     private bool isLoading;
+    //hide editable content
     private bool isHidden = false;
+    //disable/enable input
+    private bool IsDisabled = false;
     private List<string> FileList = new List<string>();
     private IBrowserFile browserFile;
     string exceptionMessage;
