@@ -130,12 +130,11 @@
     void ConfirmAppend()
     {
         var bufferStr = string.Empty;
-        foreach (var item in NewCols)
+        for(int i = 0; i < NewCols.Count; i++)
         {
-            Console.WriteLine(item);
-            bufferStr += (item + ",");
+            //if not last ele, add  ",". if last ele, add ele only
+            bufferStr += (i == NewCols.Count - 1) ? (NewCols[i]) : (NewCols[i]+",");
         }
-
         FileList.Insert(0, bufferStr);
         NewCols.Clear();
     }
