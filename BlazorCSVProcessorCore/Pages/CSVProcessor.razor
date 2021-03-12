@@ -11,21 +11,24 @@
             if (FileList.Count != 0)
             {
                 <div>
-                    <input type="checkbox" id="editChk" title="Add Header" @onchange="eventargs => { ShowHeader(eventargs.Value); }" />
+                    <input type="checkbox" id="editChk" title="Add Header" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref isHiddenHeader); }" />
                     <div id="mycontent">
                         <button id="addInputBtn" click="AddInputBox">Add Input Box</button>
                     </div>
                 </div>
-                <div hidden="@isHidden" id="headerholder" @ref="HeaderHolder">
+                <div hidden="@isHiddenHeader" id="headerholder" @ref="HeaderHolder">
                     @{
                         for (int i = 0; i < NewCols.Count; i++)
                         {
                             //add a buffer val, other wise, the i value will always be Count at last iteration
                             var val = i;
-                            <input type="text" placeholder="column" @bind="NewCols[val]" @bind:event="onchange" />
+                            <div>
+                                <input type="text" placeholder="column" @bind="NewCols[val]" @bind:event="onchange" />
+                            </div>
                         }
+
                     }
-                    <button @onclick="AppendCol">Add Column</button>
+                    <button @onclick="AppendCol">Add Header</button>
                     <button @onclick="CancelAppend">Cancel</button>
                     <button @onclick="ConfirmAppend">Confirm</button>
                 </div>
@@ -39,26 +42,43 @@
                 <p>Loading...</p>
             }
         }
+        <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
         <div class="row">
-            @for (int i=0;i<FileList.Count;i++)
-            {
-                //local index buffer;
-                var val = i;
-                <div class="row w-100">
-                    @{
-                        var cols = FileList[i].Split(',');
-                        foreach (var col in cols)
-                        {
-                            <div class="col border">
-                                <p>@col</p>
-                            </div>
+            <table class="table ">
+                <thead class="table-dark">
+                    <tr>
+                        @{
+                            foreach (var header in NewCols)
+                            {
+                                <td>@header</td>
+                            }
                         }
-                        <div class="col">
-                            <input @bind="FileList[val]" disabled="@IsDisabled"/>
-                        </div>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < FileList.Count; i++)
+                    {
+                        //local index buffer;
+                        var val = i;
+                        <tr>
+                            @{
+
+                                var cols = FileList[i].Split(',');
+                                foreach (var col in cols)
+                                {
+                                    <td class="border col">
+                                        <p>@col</p>
+                                    </td>
+                                }
+                                <td class="col">
+                                    <input @bind="FileList[val]" disabled="@IsEditable" />
+                                    <button hidden="@IsEditable" @onclick="@(()=>RemoveRow(val))">Delete Row</button>
+                                </td>
+                            }
+                        </tr>
                     }
-                </div>
-            }
+                </tbody>
+            </table>
         </div>
         <form>
             <label>
@@ -76,14 +96,17 @@
     //loading file
     private bool isLoading;
     //hide editable content
-    private bool isHidden = false;
+    private bool isHiddenHeader = true;
     //disable/enable input
-    private bool IsDisabled = false;
+    private bool IsEditable = true;
+
+
     private List<string> FileList = new List<string>();
     private IBrowserFile browserFile;
     string exceptionMessage;
     ElementReference HeaderHolder;
 
+    private string headerLine = string.Empty;
     private List<string> NewCols = new List<string>();
     async Task LoadFile(InputFileChangeEventArgs e)
     {
@@ -102,21 +125,22 @@
 
     }
 
-    void ShowHeader(object eventObj)
+    void ChangeStatus(object eventObj, ref bool isTrue)
     {
         try
         {
             if ((bool)eventObj)
             {
-                isHidden = true;
+                isTrue = false;
             }
-            else isHidden = false;
+            else isTrue = true;
         }
         catch (Exception ex)
         {
             exceptionMessage = ex.Message;
         }
     }
+
 
 
     void AppendCol(MouseEventArgs e)
@@ -136,13 +160,18 @@
 
     void ConfirmAppend()
     {
-        var bufferStr = string.Empty;
-        for(int i = 0; i < NewCols.Count; i++)
+
+    }
+
+    void RemoveRow(int index)
+    {
+        try
         {
-            //if not last ele, add  ",". if last ele, add ele only
-            bufferStr += (i == NewCols.Count - 1) ? (NewCols[i]) : (NewCols[i]+",");
+            FileList.RemoveAt(index);
         }
-        FileList.Insert(0, bufferStr);
-        NewCols.Clear();
+        catch (Exception ex)
+        {
+            exceptionMessage = ex.Message;
+        }
     }
 }
