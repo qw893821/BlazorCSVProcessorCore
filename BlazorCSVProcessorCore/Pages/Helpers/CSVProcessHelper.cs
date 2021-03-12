@@ -23,5 +23,15 @@ namespace BlazorCSVProcessorCore.Pages.Helpers
                 });
             }
         }
+
+        public static void ChangeRefTrueHelp(ref bool val)
+        {
+            val = true;
+        }
+
+        public static void ChangeRefFalseHelp(ref bool val)
+        {
+            val = false;
+        }
     }
 }
