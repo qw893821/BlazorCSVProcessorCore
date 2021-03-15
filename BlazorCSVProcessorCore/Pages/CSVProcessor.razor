@@ -8,7 +8,7 @@
     <div class="container">
 
         @{
-            if (FileList.Count != 0)
+            if (Files.Count != 0)
             {
                 <div>
                     <input type="checkbox" id="editChk" title="Add Header" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref isHiddenHeader); }" />
@@ -42,54 +42,74 @@
                 <p>Loading...</p>
             }
         }
-        <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
-        <div class="row">
-            <table class="table ">
-                <thead class="table-dark">
-                    <tr>
-                        @{
-                            foreach (var header in NewCols)
-                            {
-                                <td>@header</td>
-                            }
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (int i = 0; i < FileList.Count; i++)
-                    {
-                        //local index buffer;
-                        var val = i;
+        <ul class="nav nav-tabs" role="tablist">
+            @foreach (var (file, FileList) in Files)
+            {
+                var tabID = $"{file.Name.Split('.')[0]}-tab";
+                <li class="nav-item">
+                    <a class="nav-link active" id="@tabID" href="#@file.Name.Split('.')[0]" role="tab" data-toggle="tab" aria-controls="@file.Name.Split('.')[0]" aria-selected="false">@file.Name.Split('.')[0]</a>
+                </li>
+            }
+        </ul>
+        <div class="tab-content">
+        @foreach (var (file, FileList) in Files)
+        {
+            var ledTab = $"@{file.Name.Split('.')[0]}-tab";
+            <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="@ledTab" id="@file.Name.Split('.')[0]">
+                <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
+
+
+                <table class="table ">
+                    <thead class="table-dark">
                         <tr>
                             @{
-
-                                var cols = FileList[i].Split(',');
-                                foreach (var col in cols)
+                                foreach (var header in NewCols)
                                 {
-                                    <td class="border col">
-                                        <p>@col</p>
-                                    </td>
+                                    <td>@header</td>
                                 }
-                                <td class="col">
-                                    <input @bind="FileList[val]" disabled="@IsEditable" />
-                                    <button hidden="@IsEditable" @onclick="@(()=>RemoveRow(val))">Delete Row</button>
-                                </td>
                             }
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+
+                        @for (int i = 0; i < FileList.Count; i++)
+                        {
+                            //local index buffer;
+                            var val = i;
+                            <tr>
+                                @{
+
+                                    var cols = FileList[i].Split(',');
+                                    foreach (var col in cols)
+                                    {
+                                        <td class="border col">
+                                            <p>@col</p>
+                                        </td>
+                                    }
+                                    <td class="col">
+                                        <input @bind="FileList[val]" disabled="@IsEditable" />
+                                        <button hidden="@IsEditable" @onclick="@(() => RemoveRow(val))">Delete Row</button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+
+
+                    </tbody>
+                </table>
+            </div>
+        }
         </div>
-        <form>
-            <label>
-                Upload File
-                <InputFile OnChange="@LoadFile">
-                    some text
-                </InputFile>
-            </label>
-            <button type="submit">Upload Selected File(s)</button>
-        </form>
-    </div>
+            <form>
+                <label>
+                    Upload File
+                    <InputFile OnChange="@LoadFiles" multiple>
+                        some text
+                    </InputFile>
+                </label>
+                <button type="submit">Upload Selected File(s)</button>
+            </form>
+        </div>
 
 </div>
 @code {
@@ -100,21 +120,25 @@
     //disable/enable input
     private bool IsEditable = true;
 
+    private Dictionary<IBrowserFile, List<string>> Files = new Dictionary<IBrowserFile, List<string>>();
 
-    private List<string> FileList = new List<string>();
     private IBrowserFile browserFile;
     string exceptionMessage;
     ElementReference HeaderHolder;
 
     private string headerLine = string.Empty;
     private List<string> NewCols = new List<string>();
-    async Task LoadFile(InputFileChangeEventArgs e)
+    async Task LoadFiles(InputFileChangeEventArgs e)
     {
         isLoading = true;
         try
         {
-
-            await CSVProcessHelper.ReaderHelper(e.File.OpenReadStream(), FileList);
+            foreach (var file in e.GetMultipleFiles())
+            {
+                var FileList = new List<string>();
+                await CSVProcessHelper.ReaderHelper(file.OpenReadStream(), FileList);
+                Files.Add(file, FileList);
+            }
 
         }
         catch (Exception ex)
@@ -167,7 +191,7 @@
     {
         try
         {
-            FileList.RemoveAt(index);
+            //FileList.RemoveAt(index);
         }
         catch (Exception ex)
         {
