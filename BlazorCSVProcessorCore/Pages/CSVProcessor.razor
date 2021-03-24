@@ -2,6 +2,7 @@
 @using System.IO
 @using Microsoft.AspNetCore.Components.Forms
 @using BlazorCSVProcessorCore.Pages.Helpers
+@using BlazorCSVProcessorCore.Models
 
 <div>
     <!--display the list side by side-->
@@ -52,64 +53,66 @@
             }
         </ul>
         <div class="tab-content">
-        @foreach (var (file, FileList) in Files)
-        {
-            var ledTab = $"@{file.Name.Split('.')[0]}-tab";
-            <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="@ledTab" id="@file.Name.Split('.')[0]">
-                <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
+            @foreach (var (file, FileList) in Files)
+            {
+                var ledTab = $"@{file.Name.Split('.')[0]}-tab";
+                <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="@ledTab" id="@file.Name.Split('.')[0]">
+                    <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
 
 
-                <table class="table ">
-                    <thead class="table-dark">
-                        <tr>
-                            @{
-                                foreach (var header in NewCols)
-                                {
-                                    <td>@header</td>
-                                }
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @for (int i = 0; i < FileList.Count; i++)
-                        {
-                            //local index buffer;
-                            var val = i;
+                    <table class="table ">
+                        <thead class="table-dark">
                             <tr>
                                 @{
-
-                                    var cols = FileList[i].Split(',');
-                                    foreach (var col in cols)
+                                    foreach (var header in NewCols)
                                     {
-                                        <td class="border col">
-                                            <p>@col</p>
-                                        </td>
+                                        <td>@header</td>
                                     }
-                                    <td class="col">
-                                        <input @bind="FileList[val]" disabled="@IsEditable" />
-                                        <button hidden="@IsEditable" @onclick="@(() => RemoveRow(val))">Delete Row</button>
-                                    </td>
                                 }
                             </tr>
-                        }
+                        </thead>
+                        <tbody>
+
+                            @for (int i = 0; i < FileList.Count; i++)
+                            {
+                                //local index buffer;
+                                var val = i;
+                                <tr>
+                                    @for (int j = 0; j < FileList[i].DataList.Count; j++)
+                                    {
+                                        var buffer = j;
+                                        <td class="col border">
+                                            <input @bind="@FileList[val].DataList[buffer]" />
+                                        </td>
+                                    }
+                                    <!--<td class="border col">
+                                    <p>@FileList[i]</p>-->
+                                    @*<input @bind="@FileList[i]" />*@
+                                    <!--</td>-->
+                                    @*<td class="col">
+                                            <input @bind="FileList[val]" disabled="@IsEditable" />
+                                            <button hidden="@IsEditable" @onclick="@(() => RemoveRow(val))">Delete Row</button>
+                                        </td>*@
+
+                                </tr>
+                            }
 
 
-                    </tbody>
-                </table>
-            </div>
-        }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
-            <form>
-                <label>
-                    Upload File
-                    <InputFile OnChange="@LoadFiles" multiple>
-                        some text
-                    </InputFile>
-                </label>
-                <button type="submit">Upload Selected File(s)</button>
-            </form>
-        </div>
+        <form>
+            <label>
+                Upload File
+                <InputFile OnChange="@LoadFiles" multiple>
+                    some text
+                </InputFile>
+            </label>
+            <button type="submit">Upload Selected File(s)</button>
+        </form>
+    </div>
 
 </div>
 @code {
@@ -120,7 +123,7 @@
     //disable/enable input
     private bool IsEditable = true;
 
-    private Dictionary<IBrowserFile, List<string>> Files = new Dictionary<IBrowserFile, List<string>>();
+    private Dictionary<IBrowserFile, List<Datarow>> Files = new Dictionary<IBrowserFile, List<Datarow>>();
 
     private IBrowserFile browserFile;
     string exceptionMessage;
@@ -137,7 +140,8 @@
             {
                 var FileList = new List<string>();
                 await CSVProcessHelper.ReaderHelper(file.OpenReadStream(), FileList);
-                Files.Add(file, FileList);
+
+                Files.Add(file, FileList.Select(s => new Datarow(s)).ToList());
             }
 
         }
