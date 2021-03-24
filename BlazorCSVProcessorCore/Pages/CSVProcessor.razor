@@ -77,24 +77,27 @@
                             {
                                 //local index buffer;
                                 var val = i;
-                                <tr>
-                                    @for (int j = 0; j < FileList[i].DataList.Count; j++)
-                                    {
-                                        var buffer = j;
-                                        <td class="col border">
-                                            <input @bind="@FileList[val].DataList[buffer]" />
-                                        </td>
-                                    }
-                                    <!--<td class="border col">
-                                    <p>@FileList[i]</p>-->
-                                    @*<input @bind="@FileList[i]" />*@
-                                    <!--</td>-->
-                                    @*<td class="col">
-                                            <input @bind="FileList[val]" disabled="@IsEditable" />
-                                            <button hidden="@IsEditable" @onclick="@(() => RemoveRow(val))">Delete Row</button>
-                                        </td>*@
+                            <tr>
+                                @for (int j = 0; j < FileList[i].DataList.Count; j++)
+                                {
+                                    var buffer = j;
+                                    <td class="col border">
+                                        <input @bind="@FileList[val].DataList[buffer]" />
+                                    </td>
+                                }
+                                <td>
+                                    <button hidden="@IsEditable" @onclick="@(() => RemoveRow(file,val))">Delete Row</button>
+                                    </td>
+    <!--<td class="border col">
+    <p>@FileList[i]</p>-->
+                                @*<input @bind="@FileList[i]" />*@
+                                <!--</td>-->
+                                @*<td class="col">
+            <input @bind="FileList[val]" disabled="@IsEditable" />
+            <button hidden="@IsEditable" @onclick="@(() => RemoveRow(val))">Delete Row</button>
+        </td>*@
 
-                                </tr>
+                            </tr>
                             }
 
 
@@ -191,11 +194,12 @@
 
     }
 
-    void RemoveRow(int index)
+    void RemoveRow(IBrowserFile file,int index)
     {
         try
         {
-            //FileList.RemoveAt(index);
+           
+            Files[file].RemoveAt(index);
         }
         catch (Exception ex)
         {
