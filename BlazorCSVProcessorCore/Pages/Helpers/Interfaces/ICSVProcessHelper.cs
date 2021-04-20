@@ -8,6 +8,7 @@ namespace BlazorCSVProcessorCore.Pages.Helpers.Interfaces
 {
     interface ICSVProcessHelper
     {
-        Task ReaderHelper(Stream stream,List<string> list); 
+        Task ReaderHelper(Stream stream,List<string> list);
+
     }
 }

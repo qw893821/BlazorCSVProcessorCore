@@ -48,7 +48,9 @@
             @foreach (var (file, FileList) in Files)
             {
                 <li class="nav-item">
+
                     <p class="btn btn-primary" @onclick="@(()=>SwitchCurrentFile(@file.Name.Split('.')[0]))">@file.Name.Split('.')[0]</p>
+
                 </li>
             }
         </ul>
@@ -81,7 +83,7 @@
                                     </td>
                                 }
                                 <td>
-                                    <button hidden="@IsEditable" @onclick="@(() => RemoveRow(fileCurrent,val))">Delete Row</button>
+                                    <button hidden="@IsEditable" @onclick="@(() => RemoveRow(fileCurrent, val))">Delete Row</button>
                                 </td>
 
                             </tr>
@@ -101,8 +103,8 @@
             <button type="submit">Upload Selected File(s)</button>
         </form>
         <p class="btn btn-primary" @onclick="@DownloadFile">Downloads</p>
-    </div>
 
+    </div>
 </div>
 @code {
     //loading file
@@ -147,6 +149,7 @@
         isLoading = false;
     }
 
+
     async Task DownloadFile()
     {
         foreach (var pair in Files)
@@ -154,10 +157,11 @@
             await JSRuntime.InvokeAsync<string>(
                     "SaveFileAs",
                     $"{pair.Key.Name.Split('.')[0]}.csv",
-                    pair.Value.ToString()
+                    CSVProcessHelper.FlatList(pair.Value)
                 );
         }
     }
+
 
     void SwitchCurrentFile(string fileName)
     {
