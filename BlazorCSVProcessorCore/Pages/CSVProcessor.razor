@@ -45,65 +45,91 @@
         }
         <ul class="nav nav-tabs" role="tablist">
             @foreach (var (file, FileList) in Files)
-            {
-                var tabID = $"{file.Name.Split('.')[0]}-tab";
+            { 
                 <li class="nav-item">
-                    <a class="nav-link active" id="@tabID" href="#@file.Name.Split('.')[0]" role="tab" data-toggle="tab" aria-controls="@file.Name.Split('.')[0]" aria-selected="false">@file.Name.Split('.')[0]</a>
+                    <p class="btn btn-primary" @onclick="@(()=>SwitchCurrentFile(@file.Name.Split('.')[0]))">@file.Name.Split('.')[0]</p>
+                    @*<a class="nav-link active" id="@tabID" href="#@file.Name.Split('.')[0]" role="tab" data-toggle="tab" aria-controls="@file.Name.Split('.')[0]" aria-selected="false">@file.Name.Split('.')[0]</a>*@
                 </li>
             }
         </ul>
         <div class="tab-content">
-            @foreach (var (file, FileList) in Files)
-            {
-                var ledTab = $"@{file.Name.Split('.')[0]}-tab";
-                <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="@ledTab" id="@file.Name.Split('.')[0]">
-                    <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
-
-
-                    <table class="table ">
-                        <thead class="table-dark">
-                            <tr>
-                                @{
-                                    foreach (var header in NewCols)
-                                    {
-                                        <td>@header</td>
-                                    }
+            @*@foreach (var (file, FileList) in Files)
+        {
+            var ledTab = $"@{file.Name.Split('.')[0]}-tab";
+            <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="@ledTab" id="@file.Name.Split('.')[0]">
+                <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
+                <table class="table ">
+                    <thead class="table-dark">
+                        <tr>
+                            @{
+                                foreach (var header in NewCols)
+                                {
+                                    <td>@header</td>
                                 }
-                            </tr>
-                        </thead>
-                        <tbody>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
 
-                            @for (int i = 0; i < FileList.Count; i++)
+                        @for (int i = 0; i < FileList.Count; i++)
+                        {
+                            //local index buffer;
+                            var val = i;
+                        <tr>
+                            @for (int j = 0; j < FileList[i].DataList.Count; j++)
                             {
-                                //local index buffer;
-                                var val = i;
+                                var buffer = j;
+                                <td class="col border">
+                                    <input @bind="@FileList[val].DataList[buffer]" />
+                                </td>
+                            }
+                            <td>
+                                <button hidden="@IsEditable" @onclick="@(() => RemoveRow(file,val))">Delete Row</button>
+                                </td>
+
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }*@
+            
+            @{
+                <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
+                <table class="table ">
+                    <thead class="table-dark">
+                        <tr>
+                            @{
+                                foreach (var header in NewCols)
+                                {
+                                    <td>@header</td>
+                                }
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @for (int i = 0; i < fileCurrent.Count; i++)
+                        {
+                            //local index buffer;
+                            var val = i;
                             <tr>
-                                @for (int j = 0; j < FileList[i].DataList.Count; j++)
+                                @for (int j = 0; j < fileCurrent[i].DataList.Count; j++)
                                 {
                                     var buffer = j;
                                     <td class="col border">
-                                        <input @bind="@FileList[val].DataList[buffer]" />
+                                        <input @bind="@fileCurrent[val].DataList[buffer]" />
                                     </td>
                                 }
                                 <td>
-                                    <button hidden="@IsEditable" @onclick="@(() => RemoveRow(file,val))">Delete Row</button>
-                                    </td>
-    <!--<td class="border col">
-    <p>@FileList[i]</p>-->
-                                @*<input @bind="@FileList[i]" />*@
-                                <!--</td>-->
-                                @*<td class="col">
-            <input @bind="FileList[val]" disabled="@IsEditable" />
-            <button hidden="@IsEditable" @onclick="@(() => RemoveRow(val))">Delete Row</button>
-        </td>*@
+                                    <button hidden="@IsEditable" @onclick="@(() => RemoveRow(fileCurrent,val))">Delete Row</button>
+                                </td>
 
                             </tr>
-                            }
+                        }
+                    </tbody>
+                </table>
 
-
-                        </tbody>
-                    </table>
-                </div>
             }
         </div>
         <form>
@@ -128,6 +154,8 @@
 
     private Dictionary<IBrowserFile, List<Datarow>> Files = new Dictionary<IBrowserFile, List<Datarow>>();
 
+    private List<Datarow> fileCurrent=new List<Datarow>();
+
     private IBrowserFile browserFile;
     string exceptionMessage;
     ElementReference HeaderHolder;
@@ -144,8 +172,12 @@
                 var FileList = new List<string>();
                 await CSVProcessHelper.ReaderHelper(file.OpenReadStream(), FileList);
 
-                Files.Add(file, FileList.Select(s => new Datarow(s)).ToList());
+                var fileToStore = FileList.Select(s => new Datarow(s)).ToList();
+                Files.Add(file, fileToStore);
+
+
             }
+            fileCurrent = Files.First().Value;
 
         }
         catch (Exception ex)
@@ -153,7 +185,17 @@
             exceptionMessage = ex.Message;
         }
         isLoading = false;
+    }
 
+    void SwitchCurrentFile(string fileName)
+    {
+        foreach(var pair in Files)
+        {
+            if (pair.Key.Name.Split('.')[0] == fileName)
+            {
+                fileCurrent = pair.Value;
+            }
+        }
     }
 
     void ChangeStatus(object eventObj, ref bool isTrue)
@@ -194,12 +236,12 @@
 
     }
 
-    void RemoveRow(IBrowserFile file,int index)
+    void RemoveRow(List<Datarow> file,int index)
     {
         try
         {
-           
-            Files[file].RemoveAt(index);
+
+            file.RemoveAt(index);
         }
         catch (Exception ex)
         {
