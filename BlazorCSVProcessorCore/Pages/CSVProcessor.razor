@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using BlazorCSVProcessorCore.Pages.Helpers
 @using BlazorCSVProcessorCore.Models
+@inject IJSRuntime JSRuntime
 
 <div>
     <!--display the list side by side-->
@@ -45,55 +46,13 @@
         }
         <ul class="nav nav-tabs" role="tablist">
             @foreach (var (file, FileList) in Files)
-            { 
+            {
                 <li class="nav-item">
                     <p class="btn btn-primary" @onclick="@(()=>SwitchCurrentFile(@file.Name.Split('.')[0]))">@file.Name.Split('.')[0]</p>
-                    @*<a class="nav-link active" id="@tabID" href="#@file.Name.Split('.')[0]" role="tab" data-toggle="tab" aria-controls="@file.Name.Split('.')[0]" aria-selected="false">@file.Name.Split('.')[0]</a>*@
                 </li>
             }
         </ul>
         <div class="tab-content">
-            @*@foreach (var (file, FileList) in Files)
-        {
-            var ledTab = $"@{file.Name.Split('.')[0]}-tab";
-            <div class="tab-pane fade show active" role="tabpanel" aria-labelledby="@ledTab" id="@file.Name.Split('.')[0]">
-                <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
-                <table class="table ">
-                    <thead class="table-dark">
-                        <tr>
-                            @{
-                                foreach (var header in NewCols)
-                                {
-                                    <td>@header</td>
-                                }
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @for (int i = 0; i < FileList.Count; i++)
-                        {
-                            //local index buffer;
-                            var val = i;
-                        <tr>
-                            @for (int j = 0; j < FileList[i].DataList.Count; j++)
-                            {
-                                var buffer = j;
-                                <td class="col border">
-                                    <input @bind="@FileList[val].DataList[buffer]" />
-                                </td>
-                            }
-                            <td>
-                                <button hidden="@IsEditable" @onclick="@(() => RemoveRow(file,val))">Delete Row</button>
-                                </td>
-
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }*@
-            
             @{
                 <input type="checkbox" title="Edit" @onchange="eventargs => { ChangeStatus(eventargs.Value, ref IsEditable); }">
                 <table class="table ">
@@ -141,6 +100,7 @@
             </label>
             <button type="submit">Upload Selected File(s)</button>
         </form>
+        <p class="btn btn-primary" @onclick="@DownloadFile">Downloads</p>
     </div>
 
 </div>
@@ -154,7 +114,7 @@
 
     private Dictionary<IBrowserFile, List<Datarow>> Files = new Dictionary<IBrowserFile, List<Datarow>>();
 
-    private List<Datarow> fileCurrent=new List<Datarow>();
+    private List<Datarow> fileCurrent = new List<Datarow>();
 
     private IBrowserFile browserFile;
     string exceptionMessage;
@@ -187,9 +147,21 @@
         isLoading = false;
     }
 
+    async Task DownloadFile()
+    {
+        foreach (var pair in Files)
+        {
+            await JSRuntime.InvokeAsync<string>(
+                    "SaveFileAs",
+                    $"{pair.Key.Name.Split('.')[0]}.csv",
+                    pair.Value.ToString()
+                );
+        }
+    }
+
     void SwitchCurrentFile(string fileName)
     {
-        foreach(var pair in Files)
+        foreach (var pair in Files)
         {
             if (pair.Key.Name.Split('.')[0] == fileName)
             {
@@ -236,7 +208,7 @@
 
     }
 
-    void RemoveRow(List<Datarow> file,int index)
+    void RemoveRow(List<Datarow> file, int index)
     {
         try
         {
